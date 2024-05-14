@@ -300,7 +300,7 @@ namespace Svelto.ECS
             return entities.count > 0;
         }
 
-        public bool HasAll<T1, T2, T3, T4>(ExclusiveGroupStruct groupStruct, EntityCollection<T1, T2, T3, T4> entities)
+        public bool HasAll<T1, T2, T3, T4>(ExclusiveGroupStruct groupStruct, out EntityCollection<T1, T2, T3, T4> entities)
                 where T1 : struct, _IInternalEntityComponent
                 where T2 : struct, _IInternalEntityComponent
                 where T3 : struct, _IInternalEntityComponent
