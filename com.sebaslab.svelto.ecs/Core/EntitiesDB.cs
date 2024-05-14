@@ -138,100 +138,6 @@ namespace Svelto.ECS
             return new EntityCollection<T1, T2, T3, T4>(T1entities, T2entities, T3entities, T4entities);
         }
 
-        /// <summary>
-        /// The QueryEntities<T> follows the rule that entities could always be iterated regardless if they
-        /// are 0, 1 or N. In case of 0 it returns an empty array. This allows to use the same for iteration
-        /// regardless the number of entities built.
-        /// </summary>
-        /// <param name="groupStructId"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public EntityCollection<T> TryQueryEntities<T>(ExclusiveGroupStruct groupStructId)
-                where T : struct, _IInternalEntityComponent
-        {
-            if (groupEntityComponentsDB.TryGetValue(groupStructId, out var entitiesInGroupPerType) == false)
-            {
-                return new EntityCollection<T>(default, default, 0);
-            }
-
-            return InternalQueryEntities<T>(entitiesInGroupPerType);
-        }
-
-        public EntityCollection<T1, T2> TryQueryEntities<T1, T2>(ExclusiveGroupStruct groupStruct)
-                where T1 : struct, _IInternalEntityComponent where T2 : struct, _IInternalEntityComponent
-        {
-            if (groupEntityComponentsDB.TryGetValue(groupStruct, out var entitiesInGroupPerType) == false)
-            {
-                return new EntityCollection<T1, T2>(
-                    new EntityCollection<T1>(default, default, 0)
-                  , new EntityCollection<T2>(default, default, 0));
-            }
-
-            var T1entities = InternalQueryEntities<T1>(entitiesInGroupPerType);
-            var T2entities = InternalQueryEntities<T2>(entitiesInGroupPerType);
-            if (T1entities.count != T2entities.count)
-                return new EntityCollection<T1, T2>(
-                    new EntityCollection<T1>(default, default, 0)
-                  , new EntityCollection<T2>(default, default, 0));
-
-            return new EntityCollection<T1, T2>(T1entities, T2entities);
-        }
-
-        public EntityCollection<T1, T2, T3> TryQueryEntities<T1, T2, T3>(ExclusiveGroupStruct groupStruct)
-                where T1 : struct, _IInternalEntityComponent
-                where T2 : struct, _IInternalEntityComponent
-                where T3 : struct, _IInternalEntityComponent
-        {
-            if (groupEntityComponentsDB.TryGetValue(groupStruct, out var entitiesInGroupPerType) == false)
-            {
-                return new EntityCollection<T1, T2, T3>(
-                    new EntityCollection<T1>(default, default, 0)
-                  , new EntityCollection<T2>(default, default, 0)
-                  , new EntityCollection<T3>(default, default, 0));
-            }
-
-            var T1entities = InternalQueryEntities<T1>(entitiesInGroupPerType);
-            var T2entities = InternalQueryEntities<T2>(entitiesInGroupPerType);
-            var T3entities = InternalQueryEntities<T3>(entitiesInGroupPerType);
-            if (T1entities.count != T2entities.count || T2entities.count != T3entities.count)
-                return new EntityCollection<T1, T2, T3>(
-                       new EntityCollection<T1>(default, default, 0)
-                     , new EntityCollection<T2>(default, default, 0)
-                     , new EntityCollection<T3>(default, default, 0));
-
-            return new EntityCollection<T1, T2, T3>(T1entities, T2entities, T3entities);
-        }
-
-        public EntityCollection<T1, T2, T3, T4> TryQueryEntities<T1, T2, T3, T4>(ExclusiveGroupStruct groupStruct)
-                where T1 : struct, _IInternalEntityComponent
-                where T2 : struct, _IInternalEntityComponent
-                where T3 : struct, _IInternalEntityComponent
-                where T4 : struct, _IInternalEntityComponent
-        {
-            if (groupEntityComponentsDB.TryGetValue(groupStruct, out var entitiesInGroupPerType) == false)
-            {
-                return new EntityCollection<T1, T2, T3, T4>(
-                    new EntityCollection<T1>(default, default, 0)
-                  , new EntityCollection<T2>(default, default, 0)
-                  , new EntityCollection<T3>(default, default, 0)
-                  , new EntityCollection<T4>(default, default, 0));
-            }
-
-            var T1entities = InternalQueryEntities<T1>(entitiesInGroupPerType);
-            var T2entities = InternalQueryEntities<T2>(entitiesInGroupPerType);
-            var T3entities = InternalQueryEntities<T3>(entitiesInGroupPerType);
-            var T4entities = InternalQueryEntities<T4>(entitiesInGroupPerType);
-            if (T1entities.count != T2entities.count || T2entities.count != T3entities.count
-             || T3entities.count != T4entities.count)
-                return new EntityCollection<T1, T2, T3, T4>(
-                    new EntityCollection<T1>(default, default, 0)
-                  , new EntityCollection<T2>(default, default, 0)
-                  , new EntityCollection<T3>(default, default, 0)
-                  , new EntityCollection<T4>(default, default, 0));
-
-            return new EntityCollection<T1, T2, T3, T4>(T1entities, T2entities, T3entities, T4entities);
-        }
-
         public GroupsEnumerable<T> QueryEntities<T>(in LocalFasterReadOnlyList<ExclusiveGroupStruct> groups)
                 where T : struct, _IInternalEntityComponent
         {
@@ -335,6 +241,90 @@ namespace Svelto.ECS
         public bool HasAny<T>(ExclusiveGroupStruct groupStruct) where T : struct, _IInternalEntityComponent
         {
             return Count<T>(groupStruct) > 0;
+        }
+
+        public bool HasAny<T>(ExclusiveGroupStruct groupStructId, out EntityCollection<T> entities)
+            where T : struct, _IInternalEntityComponent
+        {
+            if (groupEntityComponentsDB.TryGetValue(groupStructId, out var entitiesInGroupPerType) == false)
+            {
+                entities = default;
+                return false;
+            }
+
+            entities = InternalQueryEntities<T>(entitiesInGroupPerType);
+            return entities.count > 0;
+        }
+
+        public bool HasAll<T1, T2>(ExclusiveGroupStruct groupStruct, out EntityCollection<T1, T2> entities)
+                where T1 : struct, _IInternalEntityComponent where T2 : struct, _IInternalEntityComponent
+        {
+            if (groupEntityComponentsDB.TryGetValue(groupStruct, out var entitiesInGroupPerType) == false)
+            {
+                entities = default;
+            }
+
+            var T1entities = InternalQueryEntities<T1>(entitiesInGroupPerType);
+            var T2entities = InternalQueryEntities<T2>(entitiesInGroupPerType);
+            if (T1entities.count != T2entities.count)
+            {
+                entities = default;
+                return false;
+            }
+
+            entities = new EntityCollection<T1, T2>(T1entities, T2entities);
+            return entities.count > 0;
+        }
+
+        public bool HasAll<T1, T2, T3>(ExclusiveGroupStruct groupStruct, out EntityCollection<T1, T2, T3> entities)
+                where T1 : struct, _IInternalEntityComponent
+                where T2 : struct, _IInternalEntityComponent
+                where T3 : struct, _IInternalEntityComponent
+        {
+            if (groupEntityComponentsDB.TryGetValue(groupStruct, out var entitiesInGroupPerType) == false)
+            {
+                entities = default;
+                return false;
+            }
+
+            var T1entities = InternalQueryEntities<T1>(entitiesInGroupPerType);
+            var T2entities = InternalQueryEntities<T2>(entitiesInGroupPerType);
+            var T3entities = InternalQueryEntities<T3>(entitiesInGroupPerType);
+            if (T1entities.count != T2entities.count || T2entities.count != T3entities.count)
+            {
+                entities = default;
+                return false;
+            }
+
+            entities = new EntityCollection<T1, T2, T3>(T1entities, T2entities, T3entities);
+            return entities.count > 0;
+        }
+
+        public bool HasAll<T1, T2, T3, T4>(ExclusiveGroupStruct groupStruct, EntityCollection<T1, T2, T3, T4> entities)
+                where T1 : struct, _IInternalEntityComponent
+                where T2 : struct, _IInternalEntityComponent
+                where T3 : struct, _IInternalEntityComponent
+                where T4 : struct, _IInternalEntityComponent
+        {
+            if (groupEntityComponentsDB.TryGetValue(groupStruct, out var entitiesInGroupPerType) == false)
+            {
+                entities = default;
+                return false;
+            }
+
+            var T1entities = InternalQueryEntities<T1>(entitiesInGroupPerType);
+            var T2entities = InternalQueryEntities<T2>(entitiesInGroupPerType);
+            var T3entities = InternalQueryEntities<T3>(entitiesInGroupPerType);
+            var T4entities = InternalQueryEntities<T4>(entitiesInGroupPerType);
+            if (T1entities.count != T2entities.count || T2entities.count != T3entities.count
+             || T3entities.count != T4entities.count)
+            {
+                entities = default;
+                return false;
+            }
+
+            entities = new EntityCollection<T1, T2, T3, T4>(T1entities, T2entities, T3entities, T4entities);
+            return entities.count > 0;
         }
 
         /// <summary>
